@@ -35,14 +35,28 @@ Point3d median_vec(vector<Point3d> points){
 
 	med = points[points.size()/2];
 	return med;
-
 }
 
-void init_string(String str){
+void init_string(String str, String comment){
 	ofstream ofs(str);
 
-	ofs << "#output_marker_point" << endl;
+	ofs << comment << endl;
 	//ofs << "g points" << endl;
+}
+
+void eight_points(Point3d *points){
+	ofstream ofs("eight_points.dat",ios::app);
+
+	for(int i = 0; i < 4; i ++){
+		ofs << points[i].x << " " << points[i].y << " " << points[i].z << endl;
+	}
+	ofs << points[0].x << " " << points[0].y << " " << points[0].z << endl << endl;
+	
+	for(int i = 4; i < 8; i ++){
+		ofs << points[i].x << " " << points[i].y << " " << points[i].z << endl;
+	}
+	ofs << points[4].x << " " << points[4].y << " " << points[4].z << endl << endl;
+
 
 }
 
@@ -75,12 +89,13 @@ int main(int argc, char **argv){
 	bool colors_flag = false;
 
 	Color color_set[8];
-	Color white_green; //markar
+	Color white_pink; //markar
 
 	Point2d marker_L, marker_R;
 
 	Point2d color_point_L[8];
 	Point2d color_point_R[8];
+	Point3d color_point_3d[8];
 
 	Point2d facef_L[4], faceb_L[4];
 	Point2d facef_R[4], faceb_R[4];
@@ -105,10 +120,10 @@ int main(int argc, char **argv){
 	color_set[3].set_colors(173, 360, 53, 79,  64, 100); //pink
 	color_set[4].set_colors(0,   21,  27, 77,  0,  52); //brown
 	color_set[5].set_colors(61,  101, 14, 100, 0,  100); //green
-	color_set[6].set_colors(148, 235, 23, 100, 17, 90); //purple
+	color_set[6].set_colors(152, 180, 32, 74, 19, 67); //purple
 	color_set[7].set_colors(88,  145, 45, 100, 19, 100); //sky
 
-	white_green.set_colors(47, 76, 17, 55, 56, 100);
+	white_pink.set_colors(201, 247, 14, 32, 80, 100);
 	//cout << color_set[0].H_max << color_set[0].H_min << endl;
 
 	capl >> frameL;
@@ -122,18 +137,25 @@ int main(int argc, char **argv){
 		if(i < 4){	
 			facef_L[i] = color_point_L[i];
 			facef_R[i] = color_point_R[i];
+			color_point_3d[i].z = 0;
 		}else if(i >= 4){	
 			faceb_L[i - 4] = color_point_L[i];
 			faceb_R[i - 4] = color_point_R[i];
+			color_point_3d[i - 4].z = color_point_L[0].x;
 		}
-
-		//cout << "L_" << i << ": "<< color_point_L[i] << endl; 
-		//cout << "R_" << i << ": "<< color_point_R[i] << endl; 
-		//cout << "diff" << i << ": "<< color_point_L[i].x - color_point_R[i].x << "," << color_point_L[i].y - color_point_R[i].y	<< endl;	
+		color_point_3d[i].x = color_point_L[i].x - color_point_L[0].x;
+		color_point_3d[i].y = color_point_L[i].y - color_point_L[0].y;
+		
+		cout << "L_" << i << ": "<< color_point_L[i] << endl; 
+		cout << "R_" << i << ": "<< color_point_R[i] << endl; 
+		cout << "diff" << i << ": "<< color_point_L[i].x - color_point_R[i].x << "," << color_point_L[i].y - color_point_R[i].y	<< endl;	
 	}
 
-	//cout << "size: (x = " << facef_L[1].x - facef_L[0].x << ", y = " << facef_L[3].y - facef_L[0].y << ")" << endl;
-	//cout << "size: (x = " << facef_R[1].x - facef_R[0].x << ", y = " << facef_R[3].y - facef_R[0].y << ")" << endl;
+	init_string("eight_points.dat", "#eight_points");
+	eight_points(&color_point_3d[0]);
+
+	cout << "size: (x = " << facef_L[1].x - facef_L[0].x << ", y = " << facef_L[3].y - facef_L[0].y << ")" << endl;
+	cout << "size: (x = " << facef_R[1].x - facef_R[0].x << ", y = " << facef_R[3].y - facef_R[0].y << ")" << endl;
 
 	//視差の計算
 	//とりあえず正面と背面の視差の平均値を使って、マーカーの距離を相対的に探す
@@ -155,7 +177,7 @@ int main(int argc, char **argv){
 	b_diff.x = b_sum_diffs.x /4.0;
 	b_diff.y = b_sum_diffs.y /4.0;
 
-	//cout << "fx: "<<f_diff.x << ", fy: " << f_diff.y << endl <<"bx: " << b_diff.x << ", by: " << b_diff.y << endl;
+	cout << "fx: "<<f_diff.x << ", fy: " << f_diff.y << endl <<"bx: " << b_diff.x << ", by: " << b_diff.y << endl;
 
 	//   //|\
 	//  /  | \
@@ -167,18 +189,23 @@ int main(int argc, char **argv){
 	//    	front_x
 	//d(depth)を求める
 	//d_s : depth = b_x : front_xから求める
+	//depth - d_s = box_size
 
+	int box_size = abs((int)facef_L[1].x - (int)facef_L[0].x);
 	double d_s = 0.0 ,depth = 0.0;
 
 	d_s = (f_diff.x*b_diff.x) / (f_diff.x - b_diff.x);
 	depth = d_s + f_diff.x;
 
-	//cout << "depth : " << depth << endl;
+	//d_s = (b_diff.x*box_size) / (f_diff.x - b_diff.x);
+	//depth = d_s + box_size;
+
+	cout << "depth : " << depth << endl;
 
 	//マーカーの位置を計測
 	//: テスト
-	marker_R = find_color_point(frameR, white_green);
-	marker_L = find_color_point(frameL, white_green);
+	marker_R = find_color_point(frameR, white_pink);
+	marker_L = find_color_point(frameL, white_pink);
 	//cout << "markar :" << marker_L.x - marker_R.x << ", " << marker_L.y - marker_R.y << endl;
 
 	//マーカーの座標
@@ -191,7 +218,6 @@ int main(int argc, char **argv){
 
 	//cout << marker_xyz << endl;
 
-	int box_size = abs((int)facef_L[1].x - (int)facef_L[0].x);
 
 	//cout << box_size << endl;
 	//検知したマーカーの座標入れる配列
@@ -202,7 +228,7 @@ int main(int argc, char **argv){
 
 	//直近数フレームの中央値を取ってその場所に点を打つようにすれば誤差は消せる?
 	//
-	init_string(argv[1]);
+	init_string(argv[1], "#output_marker_point");
 	ofstream ofs(argv[1], ios::app);
 
 	while(1){
@@ -220,8 +246,8 @@ int main(int argc, char **argv){
 
 			//マーカーの位置を計測
 			//: テスト
-			marker_R = find_color_point(frameR, white_green);
-			marker_L = find_color_point(frameL, white_green);
+			marker_R = find_color_point(frameR, white_pink);
+			marker_L = find_color_point(frameL, white_pink);
 			//cout << "markar :" << marker_L.x - marker_R.x << ", " << marker_L.y - marker_R.y << endl;
 
 			marker_xyz.x = marker_L.x - facef_L[0].x;
@@ -237,7 +263,7 @@ int main(int argc, char **argv){
 			else if(waitKey(1) == 32){	
 				imwrite("left.png", frameL);
 				imwrite("right.png", frameR);
-				//cout << "write" << endl;
+				cout << "write" << endl;
 			}
 		}
 		//median points_tmp -> out_point
