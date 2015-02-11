@@ -141,7 +141,7 @@ int main(int argc, char **argv){
 		}else if(i >= 4){	
 			faceb_L[i - 4] = color_point_L[i];
 			faceb_R[i - 4] = color_point_R[i];
-			color_point_3d[i - 4].z = color_point_L[0].x;
+			color_point_3d[i - 4].z = color_point_L[1].x - color_point_L[0].x;
 		}
 		color_point_3d[i].x = color_point_L[i].x - color_point_L[0].x;
 		color_point_3d[i].y = color_point_L[i].y - color_point_L[0].y;
@@ -194,13 +194,13 @@ int main(int argc, char **argv){
 	int box_size = abs((int)facef_L[1].x - (int)facef_L[0].x);
 	double d_s = 0.0 ,depth = 0.0;
 
-	d_s = (f_diff.x*b_diff.x) / (f_diff.x - b_diff.x);
-	depth = d_s + f_diff.x;
+	//d_s = (f_diff.x*b_diff.x) / (f_diff.x - b_diff.x);
+	//depth = d_s + f_diff.x;
 
-	//d_s = (b_diff.x*box_size) / (f_diff.x - b_diff.x);
-	//depth = d_s + box_size;
+	d_s = (b_diff.x*box_size) / (f_diff.x - b_diff.x);
+	depth = d_s + box_size;
 
-	cout << "depth : " << depth << endl;
+	cout << "d_s : " << d_s << "depth : " << depth << endl;
 
 	//マーカーの位置を計測
 	//: テスト
@@ -233,7 +233,7 @@ int main(int argc, char **argv){
 
 	while(1){
 		//取得するフレームの数を指定
-		for(int i = 0; i < 3; i++){
+		for(int i = 0; i < 5; i++){
 			capl >> frameL;
 			capr >> frameR;
 
@@ -245,16 +245,16 @@ int main(int argc, char **argv){
 			////値を座標の値をtrueにしていく
 
 			//マーカーの位置を計測
-			//: テスト
 			marker_R = find_color_point(frameR, white_pink);
 			marker_L = find_color_point(frameL, white_pink);
 			//cout << "markar :" << marker_L.x - marker_R.x << ", " << marker_L.y - marker_R.y << endl;
 
 			marker_xyz.x = marker_L.x - facef_L[0].x;
 			marker_xyz.y = marker_L.y - facef_L[0].y;
-			marker_xyz.z = (f_diff.x - (marker_L.x - marker_R.x))* depth / f_diff.x;
-			//cout << marker_xyz << endl;
+			//marker_xyz.z = (f_diff.x - (marker_L.x - marker_R.x))* depth / f_diff.x;
+			marker_xyz.z = depth - ((marker_L.x - marker_R.x)* depth / f_diff.x) ;
 			
+			//cout << marker_xyz << endl;
 			points_tmp.push_back(marker_xyz);
 
 			if(waitKey(1) == 27){

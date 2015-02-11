@@ -118,8 +118,6 @@ Point2d moment(Mat mask){
 		cx = (int)(m.m10/m.m00);
 		cy = (int)(m.m01/m.m00);
 
-		//cout << "moments (" << cx << ", " << cy << ")" << endl;
-
 		xy_point = Point2d(cx, cy);
 	}
 	return xy_point;
